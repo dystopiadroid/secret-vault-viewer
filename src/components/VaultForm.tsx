@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAzureConfig } from "@/hooks/use-azure-config";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface VaultFormProps {
@@ -83,6 +83,7 @@ const VaultForm: React.FC<VaultFormProps> = ({ onFetchSecrets, isLoading }) => {
                 value={vaultName}
                 onChange={(e) => setVaultName(e.target.value)}
                 className="bg-background/50"
+                disabled={isLoading}
               />
             </div>
 
@@ -97,6 +98,7 @@ const VaultForm: React.FC<VaultFormProps> = ({ onFetchSecrets, isLoading }) => {
                   onClick={() =>
                     document.getElementById("pemFileInput")?.click()
                   }
+                  disabled={isLoading}
                 >
                   {fileName || "Upload PEM File"}
                 </Button>
@@ -106,6 +108,7 @@ const VaultForm: React.FC<VaultFormProps> = ({ onFetchSecrets, isLoading }) => {
                   accept=".pem"
                   className="hidden"
                   onChange={handleFileChange}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -117,7 +120,14 @@ const VaultForm: React.FC<VaultFormProps> = ({ onFetchSecrets, isLoading }) => {
               disabled={isLoading || !azureConfig.isConfigured}
               className="px-6 bg-azure hover:bg-azure-dark"
             >
-              {isLoading ? "Fetching Secrets..." : "Connect & Fetch Secrets"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Fetching Secrets...</span>
+                </>
+              ) : (
+                "Connect & Fetch Secrets"
+              )}
             </Button>
           </div>
         </form>

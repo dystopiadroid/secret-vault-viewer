@@ -4,6 +4,7 @@ import VaultForm from "@/components/VaultForm";
 import SearchBar from "@/components/SearchBar";
 import SecretsTable from "@/components/SecretsTable";
 import EmptyState from "@/components/EmptyState";
+import LoadingState from "@/components/LoadingState";
 import { Secret } from "@/services/mockVaultService";
 import { fetchVaultSecrets } from "@/services/vaultService";
 import { toast } from "sonner";
@@ -103,7 +104,9 @@ const Index: React.FC = () => {
         
         <VaultForm onFetchSecrets={handleFetchSecrets} isLoading={isLoading} />
 
-        {secrets.length > 0 ? (
+        {isLoading ? (
+          <LoadingState />
+        ) : secrets.length > 0 ? (
           <>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
               <SearchBar
