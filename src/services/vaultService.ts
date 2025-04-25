@@ -89,13 +89,16 @@ export const fetchVaultSecrets = async (
     }
     
     try {
+      const formData = new FormData();
+      formData.append('vaultName', vaultName);
+      formData.append('tenantId', tenantId);
+      formData.append('clientId', clientId);
+      formData.append('pemFile', pemFile);
+      
       // Use our proxy server instead of connecting directly to Azure Key Vault
       const response = await fetch('/api/vault/secrets', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ vaultName, tenantId, clientId })
+        body: formData
       });
       
       if (!response.ok) {
