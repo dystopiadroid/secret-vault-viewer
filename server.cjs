@@ -5,7 +5,9 @@ const { ClientCertificateCredential } = require('@azure/identity');
 const { SecretClient } = require('@azure/keyvault-secrets');
 const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,6 +21,8 @@ app.use(bodyParser.json());
 
 // Proxy endpoint for Azure Key Vault with file upload
 app.post('/api/vault/secrets', upload.single('pemFile'), async (req, res) => {
+  let tempPemPath = null;
+  
   try {
     const { vaultName, tenantId, clientId } = req.body;
     
@@ -40,14 +44,20 @@ app.post('/api/vault/secrets', upload.single('pemFile'), async (req, res) => {
     const pemFilePath = req.file.path;
     const pemContent = fs.readFileSync(pemFilePath, 'utf8');
     
-    // Clean up the temporary file
+    // Create a temporary file with a proper .pem extension
+    const randomFileName = crypto.randomBytes(16).toString('hex');
+    tempPemPath = path.join(os.tmpdir(), `${randomFileName}.pem`);
+    fs.writeFileSync(tempPemPath, pemContent);
+    
+    // Clean up the original temporary file
     fs.unlinkSync(pemFilePath);
     
     try {
+      // Create credentials using the certificate file path
       const credential = new ClientCertificateCredential(
         tenantId,
         clientId,
-        pemContent
+        tempPemPath
       );
       
       const vaultUrl = `https://${vaultName}.vault.azure.net`;
@@ -107,6 +117,15 @@ app.post('/api/vault/secrets', upload.single('pemFile'), async (req, res) => {
       success: false, 
       error: `Failed to access Azure Key Vault: ${error.message}` 
     });
+  } finally {
+    // Clean up any temporary files
+    if (tempPemPath && fs.existsSync(tempPemPath)) {
+      try {
+        fs.unlinkSync(tempPemPath);
+      } catch (error) {
+        console.error("Error cleaning up temporary file:", error);
+      }
+    }
   }
 });
 
