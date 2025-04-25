@@ -1,5 +1,3 @@
-import { SecretClient } from "@azure/keyvault-secrets";
-import { InteractiveBrowserCredential } from "@azure/identity";
 import { Secret } from "./mockVaultService"; // Still reusing the Secret interface
 import { encryptValue } from "@/lib/utils";
 import * as forge from "node-forge";
@@ -57,7 +55,7 @@ const parsePemFile = async (pemFile: File): Promise<{
   });
 };
 
-// Connect to real Azure Key Vault
+// Connect to real Azure Key Vault through our proxy server
 export const fetchVaultSecrets = async (
   vaultName: string,
   pemFile: File | null,
@@ -91,61 +89,52 @@ export const fetchVaultSecrets = async (
     }
     
     try {
-      const credential = new InteractiveBrowserCredential({
-        tenantId,
-        clientId
+      // Use our proxy server instead of connecting directly to Azure Key Vault
+      const response = await fetch('/api/vault/secrets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ vaultName, tenantId, clientId })
       });
       
-      // Create the Key Vault client
-      const vaultUrl = `https://${vaultName}.vault.azure.net`;
-      const secretClient = new SecretClient(vaultUrl, credential);
-      
-      // Fetch the encryption key first
-      const encryptionKeySecret = await secretClient.getSecret("akv-util-password");
-      const encryptionKey = encryptionKeySecret.value || "";
-      
-      if (!encryptionKey) {
+      if (!response.ok) {
+        const errorData = await response.json();
         return { 
           success: false, 
-          error: "Could not retrieve encryption key 'akv-util-password' from Azure Key Vault" 
+          error: errorData.error || `Server responded with status ${response.status}` 
         };
       }
       
-      // Fetch all secrets
-      const secretsIterator = secretClient.listPropertiesOfSecrets();
-      const secrets: Secret[] = [];
-      let index = 1;
+      const result = await response.json();
       
-      for await (const secretProperties of secretsIterator) {
-        // Skip the encryption key in the returned list
-        if (secretProperties.name === "akv-util-password") {
-          continue;
-        }
-        
-        // Get the full secret including value
-        const secretResponse = await secretClient.getSecret(secretProperties.name);
-        
-        secrets.push({
-          id: index++,
-          name: secretProperties.name,
-          value: encryptValue(secretResponse.value || "", encryptionKey),
-          created: new Date(secretProperties.createdOn || new Date()),
-          lastModified: new Date(secretProperties.updatedOn || new Date()),
-          expires: secretProperties.expiresOn ? new Date(secretProperties.expiresOn) : null
-        });
+      if (!result.success) {
+        return { 
+          success: false, 
+          error: result.error || "Unknown error occurred" 
+        };
       }
       
-      // Return the encryption key along with the data
-      return { 
-        success: true, 
-        data: secrets,
-        encryptionKey: encryptionKey
-      };
+      // Encrypt the secret values before returning them to the client
+      if (result.data && result.encryptionKey) {
+        const encryptedSecrets = result.data.map((secret: Secret) => ({
+          ...secret,
+          value: encryptValue(secret.value, result.encryptionKey as string)
+        }));
+        
+        return {
+          success: true,
+          data: encryptedSecrets,
+          encryptionKey: result.encryptionKey
+        };
+      }
+      
+      return result;
     } catch (error) {
-      console.error("Azure Key Vault connection error:", error);
+      console.error("Error connecting to proxy server:", error);
       return { 
         success: false, 
-        error: `Failed to connect to Azure Key Vault: ${(error as Error).message}` 
+        error: `Failed to connect to server: ${(error as Error).message}` 
       };
     }
   } catch (error) {
