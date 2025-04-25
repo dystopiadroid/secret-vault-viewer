@@ -1,30 +1,8 @@
-import express from 'express';
-import cors from 'cors';
-import bodyParser from 'body-parser';
-import { DefaultAzureCredential } from '@azure/identity';
-import { SecretClient } from '@azure/keyvault-secrets';
-
-interface VaultRequestBody {
-  vaultName: string;
-  tenantId: string;
-  clientId: string;
-}
-
-interface Secret {
-  id: number;
-  name: string;
-  value: string;
-  created: Date;
-  lastModified: Date;
-  expires: Date | null;
-}
-
-interface VaultResponse {
-  success: boolean;
-  data?: Secret[];
-  encryptionKey?: string;
-  error?: string;
-}
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const { DefaultAzureCredential } = require('@azure/identity');
+const { SecretClient } = require('@azure/keyvault-secrets');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -36,7 +14,7 @@ app.use(bodyParser.json());
 // Proxy endpoint for Azure Key Vault
 app.post('/api/vault/secrets', async (req, res) => {
   try {
-    const { vaultName, tenantId, clientId } = req.body as VaultRequestBody;
+    const { vaultName, tenantId, clientId } = req.body;
     
     if (!vaultName || !tenantId || !clientId) {
       return res.status(400).json({ 
@@ -63,7 +41,7 @@ app.post('/api/vault/secrets', async (req, res) => {
     
     // Fetch all secrets
     const secretsIterator = secretClient.listPropertiesOfSecrets();
-    const secrets: Secret[] = [];
+    const secrets = [];
     let index = 1;
     
     for await (const secretProperties of secretsIterator) {
@@ -95,7 +73,7 @@ app.post('/api/vault/secrets', async (req, res) => {
     console.error("Error accessing Azure Key Vault:", error);
     return res.status(500).json({ 
       success: false, 
-      error: `Failed to access Azure Key Vault: ${(error as Error).message}` 
+      error: `Failed to access Azure Key Vault: ${error.message}` 
     });
   }
 });
