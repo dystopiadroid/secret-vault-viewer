@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   DropdownMenu,
@@ -16,22 +15,32 @@ import { toast } from "sonner";
 interface ExportDropdownProps {
   secrets: Secret[];
   encryptionKey: string;
+  isDecrypted?: boolean;
 }
 
-const ExportDropdown: React.FC<ExportDropdownProps> = ({ secrets, encryptionKey }) => {
+const ExportDropdown: React.FC<ExportDropdownProps> = ({ 
+  secrets, 
+  encryptionKey,
+  isDecrypted = false
+}) => {
   const [decryptDialogOpen, setDecryptDialogOpen] = useState(false);
 
   const exportToExcel = (decrypted: boolean, key?: string) => {
     // Create a copy of the data for export
-    const exportData = secrets.map((secret, index) => ({
-      "S.No": index + 1,
-      "Secret Name": secret.name,
-      [`Secret Value (${decrypted ? "Decrypted" : "Encrypted"})`]: 
-        decrypted && key ? decryptValue(secret.value, key) : secret.value,
-      "Created Date": formatDate(secret.created),
-      "Last Modified Date": formatDate(secret.lastModified),
-      "Expiry Date": secret.expires ? formatDate(secret.expires) : "No expiry",
-    }));
+    const exportData = secrets.map((secret, index) => {
+      const secretValue = decrypted 
+        ? (isDecrypted ? secret.value : (key ? decryptValue(secret.value, key) : secret.value))
+        : secret.value;
+      
+      return {
+        "S.No": index + 1,
+        "Secret Name": secret.name,
+        [`Secret Value (${decrypted ? "Decrypted" : "Encrypted"})`]: secretValue,
+        "Created Date": formatDate(secret.created),
+        "Last Modified Date": formatDate(secret.lastModified),
+        "Expiry Date": secret.expires ? formatDate(secret.expires) : "No expiry",
+      };
+    });
 
     // Create worksheet and workbook
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -74,8 +83,14 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({ secrets, encryptionKey 
           <DropdownMenuItem onClick={() => exportToExcel(false)}>
             Encrypted (Does not require enc key)
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setDecryptDialogOpen(true)}>
-            Decrypted (Requires enc key)
+          <DropdownMenuItem onClick={() => {
+            if (isDecrypted) {
+              exportToExcel(true);
+            } else {
+              setDecryptDialogOpen(true);
+            }
+          }}>
+            Decrypted {isDecrypted ? "(Already decrypted)" : "(Requires enc key)"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
