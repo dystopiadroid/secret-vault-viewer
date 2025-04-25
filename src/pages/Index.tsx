@@ -5,6 +5,7 @@ import SearchBar from "@/components/SearchBar";
 import SecretsTable from "@/components/SecretsTable";
 import EmptyState from "@/components/EmptyState";
 import LoadingState from "@/components/LoadingState";
+import GitHubCorner from "@/components/GitHubCorner";
 import { Secret } from "@/services/mockVaultService";
 import { fetchVaultSecrets } from "@/services/vaultService";
 import { toast } from "sonner";
@@ -101,6 +102,7 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-card pb-10">
+      <GitHubCorner />
       <div className="container mx-auto py-10 px-4">
         <VaultHeader title="AKV UTIL" />
         
