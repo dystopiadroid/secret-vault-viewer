@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface AzureConfig {
   tenantId: string;
@@ -7,23 +7,10 @@ interface AzureConfig {
 }
 
 export function useAzureConfig(): AzureConfig {
-  const [config, setConfig] = useState<AzureConfig>({
+  // Always return empty values
+  return {
     tenantId: '',
     clientId: '',
     isConfigured: false
-  });
-
-  useEffect(() => {
-    // Get config from environment variables
-    const tenantId = import.meta.env.VITE_AZURE_TENANT_ID || '';
-    const clientId = import.meta.env.VITE_AZURE_CLIENT_ID || '';
-    
-    setConfig({
-      tenantId,
-      clientId,
-      isConfigured: Boolean(tenantId && clientId)
-    });
-  }, []);
-
-  return config;
+  };
 } 

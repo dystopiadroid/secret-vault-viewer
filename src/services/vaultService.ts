@@ -59,8 +59,8 @@ const parsePemFile = async (pemFile: File): Promise<{
 export const fetchVaultSecrets = async (
   vaultName: string,
   pemFile: File | null,
-  tenantId: string = import.meta.env.VITE_AZURE_TENANT_ID || "",
-  clientId: string = import.meta.env.VITE_AZURE_CLIENT_ID || ""
+  tenantId: string,
+  clientId: string
 ): Promise<VaultResponse> => {
   try {
     if (!vaultName.trim()) {
@@ -74,7 +74,7 @@ export const fetchVaultSecrets = async (
     if (!tenantId || !clientId) {
       return { 
         success: false, 
-        error: "Azure tenant ID and client ID are required. Please check your environment variables." 
+        error: "Azure tenant ID and client ID are required" 
       };
     }
     

@@ -2,16 +2,16 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useAzureConfig } from "@/hooks/use-azure-config";
-import { AlertCircle, Loader2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 interface VaultFormProps {
   onFetchSecrets: (
     vaultName: string,
-    pemFile: File | null
+    pemFile: File | null,
+    tenantId: string,
+    clientId: string
   ) => Promise<void>;
   isLoading: boolean;
 }
@@ -20,7 +20,8 @@ const VaultForm: React.FC<VaultFormProps> = ({ onFetchSecrets, isLoading }) => {
   const [vaultName, setVaultName] = useState("");
   const [pemFile, setPemFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
-  const azureConfig = useAzureConfig();
+  const [tenantId, setTenantId] = useState("");
+  const [clientId, setClientId] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -41,13 +42,18 @@ const VaultForm: React.FC<VaultFormProps> = ({ onFetchSecrets, isLoading }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!azureConfig.isConfigured) {
-      toast.error("Azure environment variables are not configured");
-      return;
-    }
-    
     if (!vaultName.trim()) {
       toast.error("Please enter a vault name");
+      return;
+    }
+
+    if (!tenantId.trim()) {
+      toast.error("Please enter a Tenant ID");
+      return;
+    }
+
+    if (!clientId.trim()) {
+      toast.error("Please enter a Client ID");
       return;
     }
 
@@ -56,68 +62,85 @@ const VaultForm: React.FC<VaultFormProps> = ({ onFetchSecrets, isLoading }) => {
       return;
     }
 
-    await onFetchSecrets(vaultName, pemFile);
+    await onFetchSecrets(vaultName, pemFile, tenantId, clientId);
   };
 
   return (
     <Card className="mb-8 bg-card/60 backdrop-blur-sm border-muted/30">
       <CardContent className="pt-6">
-        {!azureConfig.isConfigured && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Azure Configuration Error</AlertTitle>
-            <AlertDescription>
-              Azure environment variables are missing. Please add VITE_AZURE_TENANT_ID and VITE_AZURE_CLIENT_ID to your .env file.
-            </AlertDescription>
-          </Alert>
-        )}
-        
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Vault Name Input - Full Width */}
+          <div className="space-y-2">
+            <Label htmlFor="vaultName">Vault Name</Label>
+            <Input
+              id="vaultName"
+              placeholder="Enter Azure vault name"
+              value={vaultName}
+              onChange={(e) => setVaultName(e.target.value)}
+              className="bg-background/50"
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Azure Credentials - Two Column Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Vault Name Input */}
+            {/* Tenant ID Input */}
             <div className="space-y-2">
-              <Label htmlFor="vaultName">Vault Name</Label>
+              <Label htmlFor="tenantId">Tenant ID</Label>
               <Input
-                id="vaultName"
-                placeholder="Enter Azure vault name"
-                value={vaultName}
-                onChange={(e) => setVaultName(e.target.value)}
+                id="tenantId"
+                placeholder="Enter Azure Tenant ID"
+                value={tenantId}
+                onChange={(e) => setTenantId(e.target.value)}
                 className="bg-background/50"
                 disabled={isLoading}
               />
             </div>
 
-            {/* PEM File Upload */}
+            {/* Client ID Input */}
             <div className="space-y-2">
-              <Label htmlFor="pemFile">PEM File</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full bg-background/50 truncate"
-                  onClick={() =>
-                    document.getElementById("pemFileInput")?.click()
-                  }
-                  disabled={isLoading}
-                >
-                  {fileName || "Upload PEM File"}
-                </Button>
-                <Input
-                  id="pemFileInput"
-                  type="file"
-                  accept=".pem"
-                  className="hidden"
-                  onChange={handleFileChange}
-                  disabled={isLoading}
-                />
-              </div>
+              <Label htmlFor="clientId">Client ID</Label>
+              <Input
+                id="clientId"
+                placeholder="Enter Azure Client ID"
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="bg-background/50"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* PEM File Upload - Full Width */}
+          <div className="space-y-2">
+            <Label htmlFor="pemFile">PEM File</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full bg-background/50 truncate"
+                onClick={() =>
+                  document.getElementById("pemFileInput")?.click()
+                }
+                disabled={isLoading}
+              >
+                {fileName || "Upload PEM File"}
+              </Button>
+              <Input
+                id="pemFileInput"
+                type="file"
+                accept=".pem"
+                className="hidden"
+                onChange={handleFileChange}
+                disabled={isLoading}
+              />
             </div>
           </div>
 
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={isLoading || !azureConfig.isConfigured}
+              disabled={isLoading}
               className="px-6 bg-azure hover:bg-azure-dark"
             >
               {isLoading ? (
@@ -132,15 +155,6 @@ const VaultForm: React.FC<VaultFormProps> = ({ onFetchSecrets, isLoading }) => {
           </div>
         </form>
       </CardContent>
-      
-      {azureConfig.isConfigured && (
-        <CardFooter className="bg-muted/10 text-xs text-muted-foreground">
-          <p>
-            Configured with Azure Tenant ID: {azureConfig.tenantId.slice(0, 4)}...{azureConfig.tenantId.slice(-4)} | 
-            Client ID: {azureConfig.clientId.slice(0, 4)}...{azureConfig.clientId.slice(-4)}
-          </p>
-        </CardFooter>
-      )}
     </Card>
   );
 };

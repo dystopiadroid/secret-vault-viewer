@@ -37,12 +37,14 @@ const Index: React.FC = () => {
 
   const handleFetchSecrets = async (
     vaultName: string,
-    pemFile: File | null
+    pemFile: File | null,
+    tenantId: string,
+    clientId: string
   ) => {
     setIsLoading(true);
     try {
       // Fetch secrets with real Azure Key Vault integration
-      const response = await fetchVaultSecrets(vaultName, pemFile);
+      const response = await fetchVaultSecrets(vaultName, pemFile, tenantId, clientId);
 
       if (response.success && response.data) {
         // Use the encryption key from the vault response

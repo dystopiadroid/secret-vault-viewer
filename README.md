@@ -4,7 +4,7 @@ A web-based tool designed to simplify interaction with Azure Key Vault (AKV). Th
 
 ## Features
 
-- Connect to Azure Key Vault using vault name and PEM certificate authentication
+- Connect to Azure Key Vault using vault name, tenant ID, client ID, and PEM certificate authentication
 - Display secrets in a searchable, tabular format
 - Encrypted secret values by default for security
 - "Decrypt All" option to view decrypted values (requires encryption key)
@@ -14,8 +14,9 @@ A web-based tool designed to simplify interaction with Azure Key Vault (AKV). Th
 ## Requirements
 
 - Azure Key Vault with secrets
-- A PEM certificate file for authentication
 - Azure AD application with certificate authentication configured
+- Tenant ID and Client ID from your Azure AD application
+- A PEM certificate file for authentication
 - A secret named "akv-util-password" in your Key Vault that serves as the encryption key
 
 ## Setup
@@ -25,14 +26,9 @@ A web-based tool designed to simplify interaction with Azure Key Vault (AKV). Th
    ```
    npm install
    ```
-3. Create a `.env` file in the root directory with the following variables:
+3. Run the development server:
    ```
-   VITE_AZURE_TENANT_ID=your-azure-tenant-id
-   VITE_AZURE_CLIENT_ID=your-azure-client-id
-   ```
-4. Run the development server:
-   ```
-   npm run dev
+   npm run dev:full
    ```
 
 ## Azure Setup
@@ -41,6 +37,7 @@ A web-based tool designed to simplify interaction with Azure Key Vault (AKV). Th
 2. Upload your certificate public key to the application
 3. Configure Key Vault access policies to allow the application to read secrets
 4. Ensure you have a secret named "akv-util-password" in your Key Vault that will be used for encryption/decryption
+5. Note down your Tenant ID and Client ID from the Azure AD application
 
 ## PEM Certificate
 
@@ -58,11 +55,12 @@ The application requires a valid PEM certificate file for authentication. The fi
 ## Usage
 
 1. Enter the vault name (without the full URL, just the name part)
-2. Upload your PEM certificate file
-3. Click "Connect to Vault" to fetch secrets
-4. Use the search bar to filter secrets by name
-5. Click "Decrypt All" and enter the encryption key to view decrypted values
-6. Use "Export to Excel" dropdown to export data with encrypted or decrypted values
+2. Enter your Azure Tenant ID and Client ID
+3. Upload your PEM certificate file
+4. Click "Connect to Vault" to fetch secrets
+5. Use the search bar to filter secrets by name
+6. Click "Decrypt All" and enter the encryption key to view decrypted values
+7. Use "Export to Excel" dropdown to export data with encrypted or decrypted values
 
 ## Security Notes
 
@@ -70,6 +68,7 @@ The application requires a valid PEM certificate file for authentication. The fi
 - Decryption requires the correct encryption key (stored as "akv-util-password" in your Key Vault)
 - The application does not store the encryption key or secret values permanently
 - All processing happens on the client side for better security
+- No Azure credentials are stored in environment variables or local storage
 
 ## Development
 
