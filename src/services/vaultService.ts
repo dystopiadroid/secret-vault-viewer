@@ -1,5 +1,5 @@
 import { SecretClient } from "@azure/keyvault-secrets";
-import { DefaultAzureCredential, ClientSecretCredential } from "@azure/identity";
+import { InteractiveBrowserCredential } from "@azure/identity";
 import { Secret } from "./mockVaultService"; // Still reusing the Secret interface
 import { encryptValue } from "@/lib/utils";
 import * as forge from "node-forge";
@@ -91,10 +91,10 @@ export const fetchVaultSecrets = async (
     }
     
     try {
-      // In browser environments, we use a different auth approach
-      // For production, a server-side component would handle this
-      // DefaultAzureCredential uses environment variables
-      const credential = new DefaultAzureCredential();
+      const credential = new InteractiveBrowserCredential({
+        tenantId,
+        clientId
+      });
       
       // Create the Key Vault client
       const vaultUrl = `https://${vaultName}.vault.azure.net`;
