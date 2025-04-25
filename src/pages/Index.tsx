@@ -125,6 +125,7 @@ const Index: React.FC = () => {
                 <ExportDropdown 
                   secrets={filteredSecrets} 
                   encryptionKey={encryptionKey} 
+                  isDecrypted={isDecrypted}
                 />
               </div>
             </div>

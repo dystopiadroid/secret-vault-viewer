@@ -18,8 +18,8 @@ interface ExportDropdownProps {
   isDecrypted?: boolean;
 }
 
-const ExportDropdown: React.FC<ExportDropdownProps> = ({ 
-  secrets, 
+const ExportDropdown: React.FC<ExportDropdownProps> = ({
+  secrets,
   encryptionKey,
   isDecrypted = false
 }) => {
@@ -28,10 +28,10 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
   const exportToExcel = (decrypted: boolean, key?: string) => {
     // Create a copy of the data for export
     const exportData = secrets.map((secret, index) => {
-      const secretValue = decrypted 
+      const secretValue = decrypted
         ? (isDecrypted ? secret.value : (key ? decryptValue(secret.value, key) : secret.value))
         : secret.value;
-      
+
       return {
         "S.No": index + 1,
         "Secret Name": secret.name,
@@ -64,7 +64,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
   // Helper function for date formatting in Excel
   const formatDate = (date: Date | string | null | undefined): string => {
     if (!date) return 'N/A';
-    
+
     const d = typeof date === 'string' ? new Date(date) : date;
     return d.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -80,9 +80,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
           <Button variant="outline">Export to Excel</Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => exportToExcel(false)}>
+          {!isDecrypted && (<DropdownMenuItem onClick={() => exportToExcel(false)}>
             Encrypted (Does not require enc key)
-          </DropdownMenuItem>
+          </DropdownMenuItem>)}
           <DropdownMenuItem onClick={() => {
             if (isDecrypted) {
               exportToExcel(true);
